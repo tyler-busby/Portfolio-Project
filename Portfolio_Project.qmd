@@ -77,7 +77,7 @@ tot_nudibranchs$image_file <- paste0("data-raw/nudibranch-photos/",
 write_csv(tot_nudibranchs, file = 'data-clean/tot_nudibranchs.csv') #save new totals dataset as updated csv file
 ```
 
-The above code to add an image file was modeled using a tutorial from Dean Chereden on YouTube. CSE Citation:  
+The code to add an image file on lines 74-75 were modeled using a tutorial from Dean Chereden on YouTube. CSE Citation:  
 Dean Chereden. Add IMAGES to Charts in RStudio [video]. Youtube. 2023 Apr 27, 8:16 minutes. [accessed 2025 May 1]. https://www.youtube.com/watch?app=desktop&v=Mt-lVqqZCVw.  
 
 ```{r}
@@ -97,13 +97,13 @@ tot_nudibranchs |>
                      limits = c(0,1250),
                      breaks = c(0, 200, 400, 600, 800, 1000, 1200)) + #resize x axis scale
   geom_image(aes(image = image_file),
-             size = 0.16) + #insert image on each bar in the bar plot
+             size = 0.16) + #insert image on each bar in the bar plot (see below)
   theme_classic() + #set theme to classic
   theme(axis.title.y = element_blank()) + #remove y axis label
   scale_fill_distiller(direction = 1) #change fill color to brewer blues
 ```
 
-The above code to add an image file was modeled using a tutorial from Dean Chereden on YouTube. CSE Citation:  
+The code to add an image file on lines 99-100 were modeled using a tutorial from Dean Chereden on YouTube. CSE Citation:  
 Dean Chereden. Add IMAGES to Charts in RStudio [video]. Youtube. 2023 Apr 27, 8:16 minutes. [accessed 2025 May 1]. https://www.youtube.com/watch?app=desktop&v=Mt-lVqqZCVw.
 
 In the above visualization, I still need to draw the three remaining nudibranchs and resize a few of the photos for evenness. The reference photos were taken/drawn by me with the exception of the hilton's aeolid photo, which was taken by Cricket Raspet on iNaturalist. CSE Citation:
