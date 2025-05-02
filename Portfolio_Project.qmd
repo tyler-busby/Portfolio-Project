@@ -1,0 +1,110 @@
+---
+title: "Portfolio Project"
+author: "Tyler Busby"
+data: "4-10-2025"
+format: html
+---
+
+```{r}
+#| label: "load-packages"
+
+library(tidyverse)
+library(ggimage)
+```
+
+
+# Data Description
+
+The data I will be using was gathered from user observations on iNaturalist, using the following website: https://www.inaturalist.org/observations/export.  
+
+The data focuses on nudibranch observations in Monterey Bay Marine Sanctuary from January 1st to December 31st, 2024. It covers all user-submitted observations of animals in the order Nudibranchia that are considered "research grade", meaning the nudibranch ID was confirmed by at least one other user. The data also only includes observations marked as open, meaning they have an associated location.  
+
+The dataset includes a number of variables, including observation id variables: id, uuid, user_id, user_name, and url. Time and date variables for the observation, including observed_on, time_observed_at, and time_zone. There are also location variables: place_guess, latitude, longitude, and positional_accuracy. The main variables I will focus on have to do with the observation's taxonomy including it's common_name, scientific_name, taxon_genus_name, taxon_family_name, and more for every taxon delineation from suborder to form. The number of agreements and disagreements along with other information included by the observer, such as tag_list and description.  
+
+Most of the data is character data, with the exception of observed_on, which is a date, and number_identification_agreements, number_identification_disagreements, latitude, longitude, and positional_accuracy, which are numerical variables.  
+
+The main questions I hope to answer with my data are:  
+- What were the most commonly-observed nudibranch species in Monterey Bay in 2024?  
+- How biodiverse were nudibranch populations in Monterey Bay in 2024?  
+- How do nudibranch populations change in Monterey Bay over time?  
+
+
+# Data Visualization
+
+To answer my first research question, I want to make a bar chart of the 10 species with the highest number of observations. I will make it in order of frequency, allowing readers to easily determine which species have the highest and lowest number of observations.  
+
+For my second question, I want to make a shiny treemap, containing each of the species divided into family then species. This will help show the biodiversity of nudibranch observations in Monterey Bay by showing the number of different nudibranch families and species there are in Monterey Bay and how common they are compared to each other. Making it a shiny plot will also allow the boxes to be the center of attention instead of being cluttered by text and allow readers to explore the data in a way that a static plot could not.  
+
+To answer my final question, I want to make a ridgeline plot of all of the species of nudibranchs included to help show the overall trend of how nudibranch populations change by each month. I may also use annotations to highlight certain times of the year or certain seasons that correspond with peaks/valleys to explain the trend.  
+
+To create a few of these visualizations, I may have to summarize the data into observation counts for each species.  
+
+
+# Data Cleaning
+
+There is also some missing data in the common_name variable coded as blanks, as some species of nudibranchs do not have a common name in iNaturalist.
+
+Based on my goal, I will not need to filter my data nor join my data with any preexisting datasets.  
+
+For my first visualization, I will have to create a new variable in order to include images in my bar graph.  
+
+There are a few variables I will want to exclude from my dataset including the observation id variables and many of the taxon designation variables that are entirely NAs, such as taxon_tribe_name and taxon_hybrid_name.  
+
+I will not need to pivot my data.  
+
+As stated in the Data Visualization section, I will have to summarize my data into total number of observations for each species in order to create some of my visualizations.  
+
+One other aspect I am going to want to fix has to do with the common_name variable, as I want to refer to most species of nudibranch by their common name; however, a few species of nudibranch do not have a common name. Thus, I want to find a way to set their common name to be the same as their scientific name or create an entirely new name variable that can use their scientific name in place of the common name.  
+
+```{r}
+#| label: "load-data"
+
+nudibranch <- read_csv("data-raw/nudibranch-obs.csv")
+```
+
+
+```{r}
+#| label: "creating-totals-data"
+
+tot_nudibranchs <- nudibranch |> #saves dataset as "total_nudibranchs"
+  mutate(common_name = coalesce(common_name, scientific_name)) |> #replaces nas in common name variable with scientific name
+  group_by(common_name) |> 
+  summarise("total_obs" = length(common_name)) #summarizes total_obs as the number of each common name observation
+
+tot_nudibranchs$image_file <- paste0("data-raw/nudibranch-photos/", 
+                                     tot_nudibranchs$common_name, ".png") #creates image address variable for each common name (see below)
+
+write_csv(tot_nudibranchs, file = 'data-clean/tot_nudibranchs.csv') #save new totals dataset as updated csv file
+```
+
+The above code to add an image file was modeled using a tutorial from Dean Chereden on YouTube. CSE Citation:  
+Dean Chereden. Add IMAGES to Charts in RStudio [video]. Youtube. 2023 Apr 27, 8:16 minutes. [accessed 2025 May 1]. https://www.youtube.com/watch?app=desktop&v=Mt-lVqqZCVw.  
+
+```{r}
+#| label: "first-visualization-rough-draft"
+
+tot_nudibranchs |>
+  arrange(-total_obs) |> #arrange by descending number of observations of each species
+  head(10) |> #select only top 10 observations
+  ggplot(aes(x = total_obs, 
+               y = fct_reorder(common_name, total_obs))) + #create plot with given aesthetics
+  geom_col(aes(fill = total_obs), 
+           color = "black") + #create bar plot with color based on observation number
+  guides(fill = "none") + #remove legend
+  labs(x = "Total Number of iNaturalist Observations in 2024",
+       title = "10 Most Common Nudibranch Species in Monterey Bay") + #create descriptive labels
+  scale_x_continuous(expand = c(0,0), 
+                     limits = c(0,1250),
+                     breaks = c(0, 200, 400, 600, 800, 1000, 1200)) + #resize x axis scale
+  geom_image(aes(image = image_file),
+             size = 0.16) + #insert image on each bar in the bar plot
+  theme_classic() + #set theme to classic
+  theme(axis.title.y = element_blank()) + #remove y axis label
+  scale_fill_distiller(direction = 1) #change fill color to brewer blues
+```
+
+The above code to add an image file was modeled using a tutorial from Dean Chereden on YouTube. CSE Citation:  
+Dean Chereden. Add IMAGES to Charts in RStudio [video]. Youtube. 2023 Apr 27, 8:16 minutes. [accessed 2025 May 1]. https://www.youtube.com/watch?app=desktop&v=Mt-lVqqZCVw.
+
+In the above visualization, I still need to draw the three remaining nudibranchs and resize a few of the photos for evenness. The reference photos were taken/drawn by me with the exception of the hilton's aeolid photo, which was taken by Cricket Raspet on iNaturalist. CSE Citation:
+Cricket Raspet. Hilton's Aeolid. iNaturalist; April 2025 [2025 May 1]. https://www.inaturalist.org/observations/277237816.
