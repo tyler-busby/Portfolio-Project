@@ -121,6 +121,46 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: package 'ggimage' was built under R version 4.4.3</code></pre>
 </div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggraph)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'ggraph' was built under R version 4.4.3</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(igraph)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'igraph' was built under R version 4.4.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'igraph'
+
+The following objects are masked from 'package:lubridate':
+
+    %--%, union
+
+The following objects are masked from 'package:dplyr':
+
+    as_data_frame, groups, union
+
+The following objects are masked from 'package:purrr':
+
+    compose, simplify
+
+The following object is masked from 'package:tidyr':
+
+    crossing
+
+The following object is masked from 'package:tibble':
+
+    as_data_frame
+
+The following objects are masked from 'package:stats':
+
+    decompose, spectrum
+
+The following object is masked from 'package:base':
+
+    union</code></pre>
+</div>
 </div>
 <section id="data-description" class="level1">
 <h1>Data Description</h1>
@@ -136,7 +176,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="data-visualization" class="level1">
 <h1>Data Visualization</h1>
 <p>To answer my first research question, I want to make a bar chart of the 10 species with the highest number of observations. I will make it in order of frequency, allowing readers to easily determine which species have the highest and lowest number of observations.</p>
-<p>For my second question, I want to make a shiny treemap, containing each of the species divided into family then species. This will help show the biodiversity of nudibranch observations in Monterey Bay by showing the number of different nudibranch families and species there are in Monterey Bay and how common they are compared to each other. Making it a shiny plot will also allow the boxes to be the center of attention instead of being cluttered by text and allow readers to explore the data in a way that a static plot could not.</p>
+<p>For my second question, I want to make a dendrogram, containing each of the species divided into suborder, superfamily, family, genus, then species. This will help show the biodiversity of nudibranch observations in Monterey Bay by showing the number of different nudibranch families and species there are in Monterey Bay. This will not only show how many unique species live in Monterey Bay but also how they relate to one another.</p>
 <p>To answer my final question, I want to make a ridgeline plot of all of the species of nudibranchs included to help show the overall trend of how nudibranch populations change by each month. I may also use annotations to highlight certain times of the year or certain seasons that correspond with peaks/valleys to explain the trend.</p>
 <p>To create a few of these visualizations, I may have to summarize the data into observation counts for each species.</p>
 </section>
@@ -150,7 +190,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>As stated in the Data Visualization section, I will have to summarize my data into total number of observations for each species in order to create some of my visualizations.</p>
 <p>One other aspect I am going to want to fix has to do with the common_name variable, as I want to refer to most species of nudibranch by their common name; however, a few species of nudibranch do not have a common name. Thus, I want to find a way to set their common name to be the same as their scientific name or create an entirely new name variable that can use their scientific name in place of the common name.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>nudibranch <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data-raw/nudibranch-obs.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>nudibranch <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data-raw/nudibranch-obs.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Rows: 9687 Columns: 33
 ── Column specification ────────────────────────────────────────────────────────
@@ -165,37 +205,44 @@ date  (1): observed_on
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>tot_nudibranchs <span class="ot">&lt;-</span> nudibranch <span class="sc">|&gt;</span> <span class="co">#saves dataset as "total_nudibranchs"</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">common_name =</span> <span class="fu">coalesce</span>(common_name, scientific_name)) <span class="sc">|&gt;</span> <span class="co">#replaces nas in common name variable with scientific name</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(common_name) <span class="sc">|&gt;</span> </span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="st">"total_obs"</span> <span class="ot">=</span> <span class="fu">length</span>(common_name)) <span class="co">#summarizes total_obs as the number of each common name observation</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>tot_nudibranchs<span class="sc">$</span>image_file <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"data-raw/nudibranch-photos/"</span>, </span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>                                     tot_nudibranchs<span class="sc">$</span>common_name, <span class="st">".png"</span>) <span class="co">#creates image address variable for each common name (see below)</span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(tot_nudibranchs, <span class="at">file =</span> <span class="st">'data-clean/tot_nudibranchs.csv'</span>) <span class="co">#save new totals dataset as updated csv file</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>nudibranch2 <span class="ot">&lt;-</span> nudibranch <span class="sc">|&gt;</span> <span class="co">#creates new nudibranch dataset with better naming</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">common_name =</span> <span class="fu">coalesce</span>(common_name, scientific_name)) <span class="sc">|&gt;</span> <span class="co">#replaces nas in common name variable with scientific name</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(common_name, scientific_name, taxon_family_name)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>tot_nudibranch <span class="ot">&lt;-</span> nudibranch2 <span class="sc">|&gt;</span> <span class="co">#saves dataset as "total_nudibranchs"</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(common_name) <span class="sc">|&gt;</span> </span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="st">"total_obs"</span> <span class="ot">=</span> <span class="fu">length</span>(common_name)) <span class="co">#summarizes total_obs as the number of each common name observation</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>tot_nudibranch <span class="ot">&lt;-</span> nudibranch2 <span class="sc">|&gt;</span> </span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unique</span>() <span class="sc">|&gt;</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">inner_join</span>(tot_nudibranch, <span class="at">by =</span> <span class="st">"common_name"</span>) <span class="co">#edits tot_nudibranch dataset to include taxon information</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>tot_nudibranch<span class="sc">$</span>image_file <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"data-raw/nudibranch-photos/"</span>, </span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>                                     tot_nudibranch<span class="sc">$</span>common_name, <span class="st">".png"</span>) <span class="co">#creates image address variable for each common name (see below)</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(tot_nudibranch, <span class="at">file =</span> <span class="st">'data-clean/tot_nudibranchs.csv'</span>) <span class="co">#save new totals dataset as updated csv file</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>The code to add an image file on lines 74-75 were modeled using a tutorial from Dean Chereden on YouTube. CSE Citation:<br>
+<p>The code to add an image file on lines 83-84 were modeled using a tutorial from Dean Chereden on YouTube. CSE Citation:<br>
 Dean Chereden. Add IMAGES to Charts in RStudio [video]. Youtube. 2023 Apr 27, 8:16 minutes. [accessed 2025 May 1]. https://www.youtube.com/watch?app=desktop&amp;v=Mt-lVqqZCVw.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>tot_nudibranchs <span class="sc">|&gt;</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="sc">-</span>total_obs) <span class="sc">|&gt;</span> <span class="co">#arrange by descending number of observations of each species</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">10</span>) <span class="sc">|&gt;</span> <span class="co">#select only top 10 observations</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> total_obs, </span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>               <span class="at">y =</span> <span class="fu">fct_reorder</span>(common_name, total_obs))) <span class="sc">+</span> <span class="co">#create plot with given aesthetics</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="fu">aes</span>(<span class="at">fill =</span> total_obs), </span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>           <span class="at">color =</span> <span class="st">"black"</span>) <span class="sc">+</span> <span class="co">#create bar plot with color based on observation number</span></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">guides</span>(<span class="at">fill =</span> <span class="st">"none"</span>) <span class="sc">+</span> <span class="co">#remove legend</span></span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Total Number of iNaturalist Observations in 2024"</span>,</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"10 Most Common Nudibranch Species in Monterey Bay"</span>) <span class="sc">+</span> <span class="co">#create descriptive labels</span></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">expand =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">0</span>), </span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>                     <span class="at">limits =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1250</span>),</span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>                     <span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">200</span>, <span class="dv">400</span>, <span class="dv">600</span>, <span class="dv">800</span>, <span class="dv">1000</span>, <span class="dv">1200</span>)) <span class="sc">+</span> <span class="co">#resize x axis scale</span></span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_image</span>(<span class="fu">aes</span>(<span class="at">image =</span> image_file),</span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>             <span class="at">size =</span> <span class="fl">0.16</span>) <span class="sc">+</span> <span class="co">#insert image on each bar in the bar plot (see below)</span></span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>() <span class="sc">+</span> <span class="co">#set theme to classic</span></span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.title.y =</span> <span class="fu">element_blank</span>()) <span class="sc">+</span> <span class="co">#remove y axis label</span></span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_distiller</span>(<span class="at">direction =</span> <span class="dv">1</span>) <span class="co">#change fill color to brewer blues</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>tot_nudibranch <span class="sc">|&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="sc">-</span>total_obs) <span class="sc">|&gt;</span> <span class="co">#arrange by descending number of observations of each species</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">10</span>) <span class="sc">|&gt;</span> <span class="co">#select only top 10 observations</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> total_obs, </span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>               <span class="at">y =</span> <span class="fu">fct_reorder</span>(common_name, total_obs))) <span class="sc">+</span> <span class="co">#create plot with given aesthetics</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="fu">aes</span>(<span class="at">fill =</span> total_obs), </span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>           <span class="at">color =</span> <span class="st">"black"</span>) <span class="sc">+</span> <span class="co">#create bar plot with color based on observation number</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">guides</span>(<span class="at">fill =</span> <span class="st">"none"</span>) <span class="sc">+</span> <span class="co">#remove legend</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Total Number of iNaturalist Observations in 2024"</span>,</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"10 Most Common Nudibranch Species in Monterey Bay"</span>) <span class="sc">+</span> <span class="co">#create descriptive labels</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">expand =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">0</span>), </span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>                     <span class="at">limits =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1250</span>),</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>                     <span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">200</span>, <span class="dv">400</span>, <span class="dv">600</span>, <span class="dv">800</span>, <span class="dv">1000</span>, <span class="dv">1200</span>)) <span class="sc">+</span> <span class="co">#resize x axis scale</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_image</span>(<span class="fu">aes</span>(<span class="at">image =</span> image_file),</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>             <span class="at">size =</span> <span class="fl">0.16</span>) <span class="sc">+</span> <span class="co">#insert image on each bar in the bar plot (see below)</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>() <span class="sc">+</span> <span class="co">#set theme to classic</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.title.y =</span> <span class="fu">element_blank</span>()) <span class="sc">+</span> <span class="co">#remove y axis label</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_distiller</span>(<span class="at">direction =</span> <span class="dv">1</span>) <span class="co">#change fill color to brewer blues</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -204,8 +251,58 @@ Dean Chereden. Add IMAGES to Charts in RStudio [video]. Youtube. 2023 Apr 27, 8:
 </div>
 </div>
 </div>
-<p>The code to add an image file on lines 99-100 were modeled using a tutorial from Dean Chereden on YouTube. CSE Citation:<br>
+<p>The code to add an image file on lines 108-109 were modeled using a tutorial from Dean Chereden on YouTube. CSE Citation:<br>
 Dean Chereden. Add IMAGES to Charts in RStudio [video]. Youtube. 2023 Apr 27, 8:16 minutes. [accessed 2025 May 1]. https://www.youtube.com/watch?app=desktop&amp;v=Mt-lVqqZCVw.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>nudi1 <span class="ot">&lt;-</span> nudibranch <span class="sc">|&gt;</span> <span class="co">#creates nudi1 dataframe using mollusca as the origin and suborder as first group</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(iconic_taxon_name, taxon_suborder_name) <span class="sc">|&gt;</span> <span class="co">#picking only relevant variables</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unique</span>() <span class="sc">|&gt;</span> <span class="co">#selecting only each unique occurance</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">"from"</span> <span class="ot">=</span> iconic_taxon_name, <span class="st">"to"</span> <span class="ot">=</span> taxon_suborder_name) <span class="co">#renaming variables for later cbind</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>nudi2 <span class="ot">&lt;-</span> nudibranch <span class="sc">|&gt;</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(taxon_suborder_name, taxon_superfamily_name) <span class="sc">|&gt;</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unique</span>() <span class="sc">|&gt;</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">"from"</span> <span class="ot">=</span> taxon_suborder_name, <span class="st">"to"</span> <span class="ot">=</span> taxon_superfamily_name) <span class="co">#repeating above for suborder and superfamily</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>nudi3 <span class="ot">&lt;-</span> nudibranch <span class="sc">|&gt;</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(taxon_superfamily_name, taxon_family_name) <span class="sc">|&gt;</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unique</span>() <span class="sc">|&gt;</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">"from"</span> <span class="ot">=</span> taxon_superfamily_name, <span class="st">"to"</span> <span class="ot">=</span> taxon_family_name) <span class="co">#repeating above for superfamily and family</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>nudi4 <span class="ot">&lt;-</span> nudibranch <span class="sc">|&gt;</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(taxon_family_name, taxon_genus_name) <span class="sc">|&gt;</span></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unique</span>() <span class="sc">|&gt;</span></span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">"from"</span> <span class="ot">=</span> taxon_family_name, <span class="st">"to"</span> <span class="ot">=</span> taxon_genus_name) <span class="co">#repeating above for family and genus</span></span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>nudi5 <span class="ot">&lt;-</span> nudibranch <span class="sc">|&gt;</span></span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">common_name =</span> <span class="fu">coalesce</span>(common_name, scientific_name)) <span class="sc">|&gt;</span> <span class="co">#adding scientific to NA common names</span></span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(taxon_genus_name, common_name) <span class="sc">|&gt;</span></span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unique</span>() <span class="sc">|&gt;</span></span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">"from"</span> <span class="ot">=</span> taxon_genus_name, <span class="st">"to"</span> <span class="ot">=</span> common_name) <span class="co">#repeating above for genus and common name (species)</span></span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>nudi_edges <span class="ot">&lt;-</span> <span class="fu">rbind</span>(nudi1, nudi2, nudi3, nudi4, nudi5) <span class="co">#combining all 5 datasets into one edge dataset</span></span>
+<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a>nudi_dendrogram <span class="ot">&lt;-</span> <span class="fu">graph_from_data_frame</span>(nudi_edges) <span class="co">#creating a graph object to be used in ggraph</span></span>
+<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a><span class="fu">ggraph</span>(nudi_dendrogram, <span class="at">layout =</span> <span class="st">'dendrogram'</span>, <span class="at">circular =</span> <span class="cn">FALSE</span>) <span class="sc">+</span> <span class="co">#creating dendrogram from nudi_dendrogram</span></span>
+<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_edge_diagonal</span>() <span class="sc">+</span></span>
+<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_node_text</span>(<span class="fu">aes</span>(<span class="at">label=</span>name, <span class="at">filter=</span>leaf), </span>
+<span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a>                 <span class="at">angle=</span><span class="dv">90</span> , </span>
+<span id="cb14-35"><a href="#cb14-35" aria-hidden="true" tabindex="-1"></a>                 <span class="at">hjust=</span><span class="dv">1</span>, </span>
+<span id="cb14-36"><a href="#cb14-36" aria-hidden="true" tabindex="-1"></a>                 <span class="at">nudge_y =</span> <span class="sc">-</span><span class="fl">0.1</span>, </span>
+<span id="cb14-37"><a href="#cb14-37" aria-hidden="true" tabindex="-1"></a>                 <span class="at">nudge_x =</span> <span class="sc">-</span><span class="fl">0.15</span>,</span>
+<span id="cb14-38"><a href="#cb14-38" aria-hidden="true" tabindex="-1"></a>                 <span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span> <span class="co">#creates text object for each common name and aligns it with node point</span></span>
+<span id="cb14-39"><a href="#cb14-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_node_point</span>(<span class="fu">aes</span>(<span class="at">filter=</span>leaf) , <span class="at">alpha=</span><span class="fl">0.6</span>) <span class="sc">+</span> <span class="co">#creates node point at each end</span></span>
+<span id="cb14-40"><a href="#cb14-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylim</span>(<span class="sc">-</span><span class="fl">2.15</span>, <span class="cn">NA</span>) <span class="sc">+</span> <span class="co">#expands y-axis vertically</span></span>
+<span id="cb14-41"><a href="#cb14-41" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>() <span class="co">#sets theme to void</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Portfolio_Project_files/figure-html/creating-nudi_edges-dataset-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
 <p>In the above visualization, I still need to draw the three remaining nudibranchs and resize a few of the photos for evenness. The reference photos were taken/drawn by me with the exception of the hilton’s aeolid photo, which was taken by Cricket Raspet on iNaturalist. CSE Citation: Cricket Raspet. Hilton’s Aeolid. iNaturalist; April 2025 [2025 May 1]. https://www.inaturalist.org/observations/277237816.</p>
 </section>
 

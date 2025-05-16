@@ -10,6 +10,8 @@ format: html
 
 library(tidyverse)
 library(ggimage)
+library(ggraph)
+library(igraph)
 ```
 
 
@@ -33,9 +35,9 @@ The main questions I hope to answer with my data are:
 
 To answer my first research question, I want to make a bar chart of the 10 species with the highest number of observations. I will make it in order of frequency, allowing readers to easily determine which species have the highest and lowest number of observations.  
 
-For my second question, I want to make a shiny treemap, containing each of the species divided into family then species. This will help show the biodiversity of nudibranch observations in Monterey Bay by showing the number of different nudibranch families and species there are in Monterey Bay and how common they are compared to each other. Making it a shiny plot will also allow the boxes to be the center of attention instead of being cluttered by text and allow readers to explore the data in a way that a static plot could not.  
+For my second question, I want to make a dendrogram, containing each of the species divided into suborder, superfamily, family, genus, then species. This will help show the biodiversity of nudibranch observations in Monterey Bay by showing the number of different nudibranch families and species there are in Monterey Bay. This will not only show how many unique species live in Monterey Bay but also how they relate to one another.  
 
-To answer my final question, I want to make a ridgeline plot of all of the species of nudibranchs included to help show the overall trend of how nudibranch populations change by each month. I may also use annotations to highlight certain times of the year or certain seasons that correspond with peaks/valleys to explain the trend.  
+To answer my final question, I want to make a ridgeline plot of all of the species of nudibranchs included to help show the overall trend of how nudibranch populations change by each month.  
 
 To create a few of these visualizations, I may have to summarize the data into observation counts for each species.  
 
@@ -64,26 +66,26 @@ nudibranch <- read_csv("data-raw/nudibranch-obs.csv")
 
 
 ```{r}
-#| label: "creating-totals-data"
+#| label: "creating-totals-dataset"
 
-tot_nudibranchs <- nudibranch |> #saves dataset as "total_nudibranchs"
+tot_nudibranch <- nudibranch |> #creates new tot_nudibranch dataset
   mutate(common_name = coalesce(common_name, scientific_name)) |> #replaces nas in common name variable with scientific name
-  group_by(common_name) |> 
+  group_by(common_name) |> #group by common_name
   summarise("total_obs" = length(common_name)) #summarizes total_obs as the number of each common name observation
 
-tot_nudibranchs$image_file <- paste0("data-raw/nudibranch-photos/", 
-                                     tot_nudibranchs$common_name, ".png") #creates image address variable for each common name (see below)
+tot_nudibranch$image_file <- paste0("data-raw/nudibranch-photos/", 
+                                     tot_nudibranch$common_name, ".png") #creates image address variable for each common name (see below)
 
-write_csv(tot_nudibranchs, file = 'data-clean/tot_nudibranchs.csv') #save new totals dataset as updated csv file
+write_csv(tot_nudibranch, file = 'data-clean/tot_nudibranchs.csv') #save new totals dataset as updated csv file
 ```
 
-The code to add an image file on lines 74-75 were modeled using a tutorial from Dean Chereden on YouTube. CSE Citation:  
+The code to add an image file on lines 76-77 were modeled using a tutorial from Dean Chereden on YouTube. CSE Citation:  
 Dean Chereden. Add IMAGES to Charts in RStudio [video]. Youtube. 2023 Apr 27, 8:16 minutes. [accessed 2025 May 1]. https://www.youtube.com/watch?app=desktop&v=Mt-lVqqZCVw.  
 
 ```{r}
 #| label: "first-visualization-rough-draft"
 
-tot_nudibranchs |>
+tot_nudibranch |>
   arrange(-total_obs) |> #arrange by descending number of observations of each species
   head(10) |> #select only top 10 observations
   ggplot(aes(x = total_obs, 
@@ -99,12 +101,96 @@ tot_nudibranchs |>
   geom_image(aes(image = image_file),
              size = 0.16) + #insert image on each bar in the bar plot (see below)
   theme_classic() + #set theme to classic
-  theme(axis.title.y = element_blank()) + #remove y axis label
+  theme(axis.title.y = element_blank(), #remove y axis label
+        title = element_text(family = "serif"),
+        axis.text.x = element_text(family = "serif"),
+        axis.text.y = element_text(family = "serif")) + #change font for all texts
   scale_fill_distiller(direction = 1) #change fill color to brewer blues
 ```
 
-The code to add an image file on lines 99-100 were modeled using a tutorial from Dean Chereden on YouTube. CSE Citation:  
+The code to add an image file on lines 101-102 were modeled using a tutorial from Dean Chereden on YouTube. CSE Citation:  
 Dean Chereden. Add IMAGES to Charts in RStudio [video]. Youtube. 2023 Apr 27, 8:16 minutes. [accessed 2025 May 1]. https://www.youtube.com/watch?app=desktop&v=Mt-lVqqZCVw.
 
-In the above visualization, I still need to draw the three remaining nudibranchs and resize a few of the photos for evenness. The reference photos were taken/drawn by me with the exception of the hilton's aeolid photo, which was taken by Cricket Raspet on iNaturalist. CSE Citation:
-Cricket Raspet. Hilton's Aeolid. iNaturalist; April 2025 [2025 May 1]. https://www.inaturalist.org/observations/277237816.
+
+```{r}
+#| label: "creating-nudi_edges-dataset"
+
+nudi1 <- nudibranch |> #creates nudi1 dataframe using mollusca as the origin and suborder as first group
+  select(iconic_taxon_name, taxon_suborder_name) |> #picking only relevant variables
+  unique() |> #selecting only each unique occurance
+  rename("from" = iconic_taxon_name, "to" = taxon_suborder_name) #renaming variables for later cbind
+
+nudi2 <- nudibranch |>
+  select(taxon_suborder_name, taxon_superfamily_name) |>
+  unique() |>
+  rename("from" = taxon_suborder_name, "to" = taxon_superfamily_name) #repeating above for suborder and superfamily
+
+nudi3 <- nudibranch |>
+  select(taxon_superfamily_name, taxon_family_name) |>
+  unique() |>
+  rename("from" = taxon_superfamily_name, "to" = taxon_family_name) #repeating above for superfamily and family
+
+nudi4 <- nudibranch |>
+  select(taxon_family_name, taxon_genus_name) |>
+  unique() |>
+  rename("from" = taxon_family_name, "to" = taxon_genus_name) #repeating above for family and genus
+
+nudi5 <- nudibranch |>
+  mutate(common_name = coalesce(common_name, scientific_name)) |> #adding scientific to NA common names
+  select(taxon_genus_name, common_name) |>
+  unique() |>
+  rename("from" = taxon_genus_name, "to" = common_name) #repeating above for genus and common name (species)
+
+nudi_edges <- rbind(nudi1, nudi2, nudi3, nudi4, nudi5) #combining all 5 datasets into one edge dataset
+```
+
+
+```{r}
+nudi_dendrogram <- graph_from_data_frame(nudi_edges) #creating a graph object to be used in ggraph
+
+ggraph(nudi_dendrogram, layout = 'dendrogram', circular = FALSE) + #creating dendrogram from nudi_dendrogram
+  geom_edge_diagonal() +
+  geom_node_text(aes(label=name, filter=leaf), 
+                 angle=90 , 
+                 hjust=1, 
+                 nudge_y = -0.1, 
+                 nudge_x = -0.15,
+                 size = 2) + #creates text object for each common name and aligns it with node point
+  geom_node_point(aes(filter=leaf) , alpha=0.6) + #creates node point at each end
+  ylim(-2.15, NA) + #expands y-axis vertically
+  theme_void() #sets theme to void
+```
+
+The code in the above 2 code chunks to create the dendrogram was modeled from a tutorial from the R Graph Gallery. CSE Citation:  
+Yan Holtz. c2016-2018. Dendrogram [Internet]. The R Graph Gallery. [updated 2025; cited 2025 May 15]. Available from: https://r-graph-gallery.com/dendrogram.html.  
+
+```{r}
+monthly_nudibranch <- nudibranch |> #creates new monthly_nudibranch dataset
+  mutate(common_name = coalesce(common_name, scientific_name), #replaces nas in common name variable with scientific name
+         month = month(observed_on, label = FALSE)) #summarizes total_obs as the number of each common name observation
+```
+
+```{r}
+ggplot(monthly_nudibranch, aes(x = month, y = common_name, fill = common_name)) +
+  geom_density_ridges(trim = TRUE, 
+                      scale = 5) + 
+  theme_ridges() + #create ridge plot with x of month and y of common_name
+  theme(axis.text.y = element_blank(),
+        axis.title.y = element_text(size = 1),
+        axis.text.x = element_text(size = 6,
+                                   family = "serif"),
+        axis.title.x = element_text(hjust = 0.5,
+                                    family = "serif"),
+        title = element_text(size = 10, 
+                             family = "serif")) +  #change font and size for all texts
+  theme(legend.position = "none") + #remove legend
+  scale_x_continuous(expand = c(0,0),
+                     limits = c(1, 12),
+                     breaks = seq_along(month.name), 
+                     labels = month.name) + #change scale of x axis
+  labs(y = "",
+       x = "Month",
+       title = "Nudibranch Populations in the Monterey Bay by Month",) + #add descriptive labels 
+  scale_fill_viridis_d(option = "mako")
+```
+
